@@ -10,7 +10,7 @@
       <i v-if="action === 'RESUME'" @click.stop="onResumeClick">
         <mo-icon name="task-start-line" width="14" height="14" />
       </i>
-      <i v-if="action === 'RESTART'" @click="onRestartClick">
+      <i v-if="action === 'RESTART'" @click.stop="onRestartClick">
         <mo-icon name="task-restart" width="14" height="14" />
       </i>
       <i v-if="action === 'DELETE'" @click.stop="onDeleteClick">
@@ -28,16 +28,21 @@
       <i v-if="action ==='INFO'" @click.stop="onInfoClick">
         <mo-icon name="info-circle" width="14" height="14" />
       </i>
-      <i v-if="action ==='MORE'" @click.stop="onMoreClick">
-        <mo-icon name="more" width="14" height="14" />
-      </i>
     </li>
   </ul>
 </template>
 
 <script>
+  import { mapState } from 'vuex'
   import is from 'electron-is'
-  import * as clipboard from 'clipboard-polyfill'
+
+  import { commands } from '@/components/CommandManager/instance'
+  import { TASK_STATUS } from '@shared/constants'
+  import {
+    checkTaskIsSeeder,
+    getTaskName
+  } from '@shared/utils'
+  import { getTaskFullPath } from '@/utils/native'
   import '@/components/Icons/task-start-line'
   import '@/components/Icons/task-pause-line'
   import '@/components/Icons/task-stop-line'
@@ -46,28 +51,16 @@
   import '@/components/Icons/folder'
   import '@/components/Icons/link'
   import '@/components/Icons/info-circle'
-  import '@/components/Icons/more'
   import '@/components/Icons/trash'
-  import {
-    showItemInFolder,
-    moveTaskFilesToTrash
-  } from '@/components/Native/utils'
-  import {
-    checkTaskIsSeeder,
-    getTaskFullPath,
-    getTaskName,
-    getTaskUri,
-    parseHeader
-  } from '@shared/utils'
 
   const taskActionsMap = {
-    active: ['PAUSE', 'DELETE'],
-    paused: ['RESUME', 'DELETE'],
-    waiting: ['RESUME', 'DELETE'],
-    error: ['RESTART', 'TRASH'],
-    complete: ['RESTART', 'TRASH'],
-    removed: ['RESTART', 'TRASH'],
-    seeding: ['STOP', 'DELETE']
+    [TASK_STATUS.ACTIVE]: ['PAUSE', 'DELETE'],
+    [TASK_STATUS.PAUSED]: ['RESUME', 'DELETE'],
+    [TASK_STATUS.WAITING]: ['RESUME', 'DELETE'],
+    [TASK_STATUS.ERROR]: ['RESTART', 'TRASH'],
+    [TASK_STATUS.COMPLETE]: ['RESTART', 'TRASH'],
+    [TASK_STATUS.REMOVED]: ['RESTART', 'TRASH'],
+    [TASK_STATUS.SEEDING]: ['STOP', 'DELETE']
   }
 
   export default {
@@ -75,7 +68,10 @@
     props: {
       mode: {
         type: String,
-        default: 'LIST'
+        default: 'LIST',
+        validator: function (value) {
+          return ['LIST', 'DETAIL'].indexOf(value) !== -1
+        }
       },
       task: {
         type: Object,
@@ -83,6 +79,9 @@
       }
     },
     computed: {
+      ...mapState('preference', {
+        noConfirmBeforeDelete: state => state.config.noConfirmBeforeDeleteTask
+      }),
       taskName () {
         return getTaskName(this.task)
       },
@@ -95,16 +94,23 @@
       taskStatus () {
         const { task, isSeeder } = this
         if (isSeeder) {
-          return 'seeding'
+          return TASK_STATUS.SEEDING
         } else {
           return task.status
         }
       },
       taskCommonActions () {
-        let result = is.renderer() ? ['FOLDER'] : []
-        result = (this.mode === 'LIST')
-          ? [...result, 'LINK', 'INFO']
-          : [...result, 'LINK']
+        const { mode } = this
+        const result = is.renderer() ? ['FOLDER'] : []
+
+        switch (mode) {
+        case 'LIST':
+          result.push('LINK', 'INFO')
+          break
+        case 'DETAIL':
+          result.push('LINK')
+          break
+        }
 
         return result
       },
@@ -116,224 +122,103 @@
       }
     },
     methods: {
-      isRenderer: is.renderer,
-      deleteTaskFiles (task) {
-        moveTaskFilesToTrash(task, {
-          pathErrorMsg: this.$t('task.file-path-error'),
-          delFailMsg: this.$t('task.remove-task-file-fail'),
-          delConfigFailMsg: this.$t('task.remove-task-config-file-fail')
-        })
-      },
-      removeTaskItem (task, isRemoveWithFiles) {
-        this.$store.dispatch('task/removeTask', this.task)
-          .then(() => {
-            if (isRemoveWithFiles) {
-              this.deleteTaskFiles(task)
-            }
-            this.$msg.success(this.$t('task.delete-task-success', {
-              taskName: this.taskName
-            }))
-          })
-          .catch(({ code }) => {
-            if (code === 1) {
-              this.$msg.error(this.$t('task.delete-task-fail', {
-                taskName: this.taskName
-              }))
-            }
-          })
-      },
-      removeTaskRecord (task, isRemoveWithFiles) {
-        this.$store.dispatch('task/removeTaskRecord', this.task)
-          .then(() => {
-            if (isRemoveWithFiles) {
-              this.deleteTaskFiles(task)
-            }
-            this.$msg.success(this.$t('task.remove-record-success', {
-              taskName: this.taskName
-            }))
-          })
-          .catch(({ code }) => {
-            if (code === 1) {
-              this.$msg.error(this.$t('task.remove-record-fail', {
-                taskName: this.taskName
-              }))
-            }
-          })
-      },
       onResumeClick () {
-        this.$store.dispatch('task/resumeTask', this.task)
-          .catch(({ code }) => {
-            if (code === 1) {
-              this.$msg.error(this.$t('task.resume-task-fail', {
-                taskName: this.taskName
-              }))
-            }
-          })
+        const { task, taskName } = this
+        commands.emit('resume-task', {
+          task,
+          taskName
+        })
       },
       onRestartClick (event) {
         const { task, taskName } = this
-        const { gid, status } = task
-        const uri = getTaskUri(task)
-        const isNeedShowDialog = status === 'complete' || !!event.altKey
-        this.$store.dispatch('task/getTaskOption', gid)
-          .then((data) => {
-            console.log('getTaskOption===>', data)
-            const { dir, header, split } = data
-            const options = {
-              dir,
-              header,
-              split,
-              out: taskName
-            }
-
-            if (isNeedShowDialog) {
-              this.showAddTaskDialog(uri, options)
-            } else {
-              this.directAddTask(uri, options)
-              this.$store.dispatch('task/removeTaskRecord', task)
-            }
-          })
-      },
-      directAddTask (uri, options = {}) {
-        const uris = [uri]
-        const payload = {
-          uris,
-          options: {
-            ...options
-          }
-        }
-        this.$store.dispatch('task/addUri', payload)
-          .catch((err) => {
-            this.$msg.error(err.message)
-          })
-      },
-      showAddTaskDialog (uri, options = {}) {
-        const {
-          header,
-          ...rest
-        } = options
-
-        const headers = parseHeader(header)
-        const newOptions = {
-          ...rest,
-          ...headers
-        }
-
-        this.$store.dispatch('app/updateAddTaskUrl', uri)
-        this.$store.dispatch('app/updateAddTaskOptions', newOptions)
-        this.$store.dispatch('app/showAddTaskDialog', 'uri')
+        const { status } = task
+        const showDialog = status === TASK_STATUS.COMPLETE || !!event.altKey
+        commands.emit('restart-task', {
+          task,
+          taskName,
+          showDialog
+        })
       },
       onPauseClick () {
-        this.pauseTask()
+        const { task, taskName } = this
+        commands.emit('pause-task', {
+          task,
+          taskName
+        })
       },
       onStopClick () {
-        this.stopSeeding()
-      },
-      stopSeeding () {
         if (!this.isSeeder) {
           return
         }
-        this.$store.dispatch('task/stopSeeding', this.task)
-      },
-      pauseTask () {
-        const { taskName } = this
-        this.$msg.info(this.$t('task.download-pause-message', { taskName }))
-        this.$store.dispatch('task/pauseTask', this.task)
-          .catch(({ code }) => {
-            if (code === 1) {
-              this.$msg.error(this.$t('task.pause-task-fail', { taskName }))
-            }
-          })
+
+        const { task } = this
+        commands.emit('stop-task-seeding', { task })
       },
       onDeleteClick (event) {
-        const self = this
-        const { task } = this
-        const isChecked = !!event.shiftKey
-        this.$electron.remote.dialog.showMessageBox({
-          type: 'warning',
-          title: this.$t('task.delete-task'),
-          message: this.$t('task.delete-task-confirm', { taskName: this.taskName }),
-          buttons: [this.$t('app.yes'), this.$t('app.no')],
-          cancelId: 1,
-          checkboxLabel: this.$t('task.delete-task-label'),
-          checkboxChecked: isChecked
-        }, (buttonIndex, checkboxChecked) => {
-          if (buttonIndex === 0) {
-            self.removeTaskItem(task, checkboxChecked)
-          }
+        const { task, taskName } = this
+        const deleteWithFiles = !!event.shiftKey
+        commands.emit('delete-task', {
+          task,
+          taskName,
+          deleteWithFiles
         })
       },
       onTrashClick (event) {
-        const self = this
-        const { task } = this
-        const isChecked = !!event.shiftKey
-        this.$electron.remote.dialog.showMessageBox({
-          type: 'warning',
-          title: this.$t('task.remove-record'),
-          message: this.$t('task.remove-record-confirm', { taskName: this.taskName }),
-          buttons: [this.$t('app.yes'), this.$t('app.no')],
-          cancelId: 1,
-          checkboxLabel: this.$t('task.remove-record-label'),
-          checkboxChecked: isChecked
-        }, (buttonIndex, checkboxChecked) => {
-          if (buttonIndex === 0) {
-            self.removeTaskRecord(task, checkboxChecked)
-          }
+        const { task, taskName } = this
+        const deleteWithFiles = !!event.shiftKey
+        commands.emit('delete-task-record', {
+          task,
+          taskName,
+          deleteWithFiles
         })
       },
       onFolderClick () {
-        showItemInFolder(this.path, {
-          errorMsg: this.$t('task.file-not-exist')
-        })
+        const { path } = this
+        commands.emit('reveal-in-folder', { path })
       },
       onLinkClick () {
-        this.$store.dispatch('app/fetchEngineOptions')
-          .then((data) => {
-            const { btTracker } = data
-            const uri = getTaskUri(this.task, btTracker)
-            clipboard.writeText(uri)
-              .then(() => {
-                this.$msg.success(this.$t('task.copy-link-success'))
-              })
-          })
+        const { task } = this
+        commands.emit('copy-task-link', { task })
       },
       onInfoClick () {
-        this.$store.dispatch('task/showTaskItemInfoDialog', this.task)
-      },
-      onMoreClick () {
-        console.log('onMoreClick===>')
+        const { task } = this
+        commands.emit('show-task-info', { task })
       }
     }
   }
 </script>
 
 <style lang="scss">
-  .task-item-actions {
-    // width: 28px;
-    height: 24px;
-    padding: 0 10px;
-    overflow: hidden;
-    user-select: none;
-    cursor: default;
-    text-align: right;
-    direction: rtl;
-    border: 1px solid $--task-item-action-border-color;
-    color: $--task-item-action-color;
-    background-color: $--task-item-action-background;
-    border-radius: 14px;
-    transition: $--all-transition;
-    &:hover {
-      border-color: $--task-item-action-hover-border-color;
-      color: $--task-item-action-hover-color;
-      background-color: $--task-item-action-hover-background;
-      width: auto;
-    }
-    &> .task-item-action {
+.task-item-actions {
+  // width: 28px;
+  height: 24px;
+  padding: 0 10px;
+  margin: 0;
+  overflow: hidden;
+  user-select: none;
+  cursor: default;
+  text-align: right;
+  direction: rtl;
+  border: 1px solid $--task-item-action-border-color;
+  color: $--task-item-action-color;
+  background-color: $--task-item-action-background;
+  border-radius: 14px;
+  transition: $--all-transition;
+  &:hover {
+    border-color: $--task-item-action-hover-border-color;
+    color: $--task-item-action-hover-color;
+    background-color: $--task-item-action-hover-background;
+    width: auto;
+  }
+  &> .task-item-action {
+    display: inline-block;
+    padding: 5px;
+    margin: 0 4px;
+    font-size: 0;
+    cursor: pointer;
+    i {
       display: inline-block;
-      padding: 5px;
-      margin: 0 4px;
-      font-size: 0;
-      cursor: pointer;
     }
   }
+}
 </style>

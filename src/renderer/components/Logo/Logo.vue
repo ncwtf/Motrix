@@ -37,6 +37,8 @@
     display: block;
     width: 100%;
     height: 100%;
+    outline: none;
+    border: none;
     text-align: center;
     font-size: 0;
     color: $--app-logo-color;

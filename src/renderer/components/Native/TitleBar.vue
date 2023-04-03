@@ -16,6 +16,7 @@
 </template>
 
 <script>
+  import { getCurrentWindow } from '@electron/remote'
   import '@/components/Icons/win-minimize'
   import '@/components/Icons/win-maximize'
   import '@/components/Icons/win-close'
@@ -28,22 +29,22 @@
       }
     },
     computed: {
-      win: function () {
-        return this.$electron.remote.getCurrentWindow()
+      win () {
+        return getCurrentWindow()
       }
     },
     methods: {
-      handleMinimize: function () {
+      handleMinimize () {
         this.win.minimize()
       },
-      handleMaximize: function () {
+      handleMaximize () {
         if (this.win.isMaximized()) {
           this.win.unmaximize()
         } else {
           this.win.maximize()
         }
       },
-      handleClose: function () {
+      handleClose () {
         this.win.close()
       }
     }
@@ -61,6 +62,7 @@
   height: 36px;
   z-index: 5000;
   .title-bar-dragger {
+    margin: 5px 0 0 5px;
     flex: 1;
     user-select: none;
     -webkit-app-region: drag;
@@ -73,10 +75,12 @@
     padding: 0;
     margin: 0;
     z-index: 5100;
+    font-size: 0;
     > li {
       display: inline-block;
-      padding: 5px 10px;
-      margin: 0 5px;
+      padding: 5px 18px;
+      font-size: 16px;
+      margin: 0;
       color: $--titlebar-actions-color;
       &:hover {
         background-color: $--titlebar-actions-active-background;

@@ -1,12 +1,13 @@
 import { EventEmitter } from 'events'
 import { Menu } from 'electron'
+
 import {
   translateTemplate,
   flattenMenuItems,
   updateStates
 } from '../utils/menu'
 import keymap from '@shared/keymap'
-import { getI18n } from '@/ui/Locale'
+import { getI18n } from '../ui/Locale'
 
 export default class MenuManager extends EventEmitter {
   constructor (options) {
@@ -23,13 +24,13 @@ export default class MenuManager extends EventEmitter {
   }
 
   load () {
-    let template = require(`../menus/${process.platform}.json`)
-    this.template = template['menu']
+    const template = require(`../menus/${process.platform}.json`)
+    this.template = template.menu
   }
 
   build () {
     const keystrokesByCommand = {}
-    for (let item in this.keymap) {
+    for (const item in this.keymap) {
       keystrokesByCommand[this.keymap[item]] = item
     }
 
@@ -46,7 +47,7 @@ export default class MenuManager extends EventEmitter {
     this.items = flattenMenuItems(menu)
   }
 
-  rebuild () {
+  handleLocaleChange (locale) {
     this.setup()
   }
 

@@ -1,21 +1,31 @@
-import { app } from 'electron'
+import { app, nativeTheme } from 'electron'
 import is from 'electron-is'
 import { resolve } from 'path'
 import { existsSync, lstatSync } from 'fs'
-import logger from '../core/Logger'
+
+import {
+  APP_THEME,
+  ENGINE_MAX_CONNECTION_PER_SERVER,
+  IP_VERSION
+} from '@shared/constants'
+
 import engineBinMap from '../configs/engine'
 
 export function getLogPath () {
-  return logger.transports.file.file
+  return app.getPath('logs')
 }
 
 export function getDhtPath (protocol) {
-  const name = protocol === 6 ? 'dht6.dat' : 'dht.dat'
+  const name = protocol === IP_VERSION.V6 ? 'dht6.dat' : 'dht.dat'
   return resolve(app.getPath('userData'), `./${name}`)
 }
 
 export function getSessionPath () {
   return resolve(app.getPath('userData'), './download.session')
+}
+
+export function getEnginePidPath () {
+  return resolve(app.getPath('userData'), './engine.pid')
 }
 
 export function getUserDataPath () {
@@ -27,12 +37,12 @@ export function getUserDownloadsPath () {
 }
 
 export function getEngineBin (platform) {
-  let result = engineBinMap.hasOwnProperty(platform) ? engineBinMap[platform] : ''
+  const result = engineBinMap[platform] || ''
   return result
 }
 
 export function transformConfig (config) {
-  let result = []
+  const result = []
   for (const [k, v] of Object.entries(config)) {
     if (v !== '') {
       result.push(`--${k}=${v}`)
@@ -82,7 +92,7 @@ export function splitArgv (argv) {
 }
 
 export function parseArgvAsUrl (argv) {
-  let arg = argv[1]
+  const arg = argv[1]
   if (!arg) {
     return
   }
@@ -95,13 +105,13 @@ export function parseArgvAsUrl (argv) {
 export function checkIsSupportedSchema (url = '') {
   const str = url.toLowerCase()
   if (
-    str.startsWith('mo:') ||
-    str.startsWith('motrix:') ||
+    str.startsWith('ftp:') ||
     str.startsWith('http:') ||
     str.startsWith('https:') ||
-    str.startsWith('ftp:') ||
     str.startsWith('magnet:') ||
-    str.startsWith('thunder:')
+    str.startsWith('thunder:') ||
+    str.startsWith('mo:') ||
+    str.startsWith('motrix:')
   ) {
     return true
   } else {
@@ -123,4 +133,23 @@ export function parseArgvAsFile (argv) {
     arg = arg.replace('file://', '')
   }
   return arg
+}
+
+export const getMaxConnectionPerServer = () => {
+  return ENGINE_MAX_CONNECTION_PER_SERVER
+}
+
+export const getSystemTheme = () => {
+  let result = APP_THEME.LIGHT
+  result = nativeTheme.shouldUseDarkColors ? APP_THEME.DARK : APP_THEME.LIGHT
+  return result
+}
+
+export const convertArrayBufferToBuffer = (arrayBuffer) => {
+  const buffer = Buffer.alloc(arrayBuffer.byteLength)
+  const view = new Uint8Array(arrayBuffer)
+  for (let i = 0; i < buffer.length; ++i) {
+    buffer[i] = view[i]
+  }
+  return buffer
 }

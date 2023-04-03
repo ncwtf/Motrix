@@ -2,7 +2,7 @@
   <el-dialog
     custom-class="app-about-dialog"
     width="61.8vw"
-    :visible.sync="visible"
+    :visible="visible"
     @open="handleOpen"
     :before-close="handleClose"
     @closed="handleClosed">
@@ -12,10 +12,10 @@
 </template>
 
 <script>
-  import is from 'electron-is'
   import { mapState } from 'vuex'
   import AppInfo from '@/components/About/AppInfo'
   import Copyright from '@/components/About/Copyright'
+  import { app } from '@electron/remote'
 
   export default {
     name: 'mo-about-panel',
@@ -30,7 +30,7 @@
       }
     },
     data () {
-      const version = this.$electron.remote.app.getVersion()
+      const version = app.getVersion()
       return {
         version
       }
@@ -41,8 +41,6 @@
       })
     },
     methods: {
-      isRenderer: is.renderer,
-      isMas: is.mas,
       handleOpen () {
         this.$store.dispatch('app/fetchEngineInfo')
       },
@@ -56,11 +54,12 @@
 </script>
 
 <style lang="scss">
-  .app-about-dialog {
-    max-width: 632px;
-    .el-dialog__header {
-      padding-top: 0;
-      padding-bottom: 0;
-    }
+.app-about-dialog {
+  max-width: 632px;
+  min-width: 380px;
+  .el-dialog__header {
+    padding-top: 0;
+    padding-bottom: 0;
   }
+}
 </style>

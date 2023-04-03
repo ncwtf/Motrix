@@ -1,8 +1,11 @@
-
 import { EventEmitter } from 'events'
 import { app } from 'electron'
+import is from 'electron-is'
+import { parse } from 'querystring'
+
 import logger from './Logger'
 import protocolMap from '../configs/protocol'
+import { ADD_TASK_TYPE } from '@shared/constants'
 
 export default class ProtocolManager extends EventEmitter {
   constructor (options = {}) {
@@ -25,7 +28,11 @@ export default class ProtocolManager extends EventEmitter {
     this.setup(protocols)
   }
 
-  setup (protocols) {
+  setup (protocols = {}) {
+    if (is.dev() || is.mas()) {
+      return
+    }
+
     Object.keys(protocols).forEach((protocol) => {
       const enabled = protocols[protocol]
       if (enabled) {
@@ -42,10 +49,13 @@ export default class ProtocolManager extends EventEmitter {
     logger.info(`[Motrix] protocol url: ${url}`)
 
     if (
+      url.toLowerCase().startsWith('ftp:') ||
+      url.toLowerCase().startsWith('http:') ||
+      url.toLowerCase().startsWith('https:') ||
       url.toLowerCase().startsWith('magnet:') ||
       url.toLowerCase().startsWith('thunder:')
     ) {
-      return this.handleMagnetAndThunderProtocol(url)
+      return this.handleResourceProtocol(url)
     }
 
     if (
@@ -56,17 +66,20 @@ export default class ProtocolManager extends EventEmitter {
     }
   }
 
-  handleMagnetAndThunderProtocol (url) {
+  handleResourceProtocol (url) {
     if (!url) {
       return
     }
 
-    global.application.sendCommandToAll('application:new-task', 'uri', url)
+    global.application.sendCommandToAll('application:new-task', {
+      type: ADD_TASK_TYPE.URI,
+      uri: url
+    })
   }
 
   handleMoProtocol (url) {
     const parsed = new URL(url)
-    const { host } = parsed
+    const { host, search } = parsed
     logger.info('[Motrix] protocol parsed:', parsed, host)
 
     const command = protocolMap[host]
@@ -74,10 +87,8 @@ export default class ProtocolManager extends EventEmitter {
       return
     }
 
-    // @TODO 没想明白怎么传参数好
-    // 如果按顺序传递，那 url 的 query string 就要求有序的了
-    // const query = queryString.parse(parsed.query)
-    const args = []
-    global.application.sendCommandToAll(command, ...args)
+    const query = search.startsWith('?') ? search.replace('?', '') : search
+    const args = parse(query)
+    global.application.sendCommandToAll(command, args)
   }
 }

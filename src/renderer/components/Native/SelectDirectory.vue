@@ -8,6 +8,7 @@
 </template>
 
 <script>
+  import { dialog } from '@electron/remote'
   import '@/components/Icons/folder'
 
   export default {
@@ -15,14 +16,15 @@
     props: {
     },
     methods: {
-      onFolderClick: function () {
+      onFolderClick () {
         const self = this
-        this.$electron.remote.dialog.showOpenDialog({
-          properties: ['openDirectory']
-        }, (filePaths) => {
-          if (!filePaths) {
+        dialog.showOpenDialog({
+          properties: ['openDirectory', 'createDirectory']
+        }).then(({ canceled, filePaths }) => {
+          if (canceled || filePaths.length === 0) {
             return
           }
+
           const [path] = filePaths
           self.$emit('selected', path)
         })
@@ -30,6 +32,3 @@
     }
   }
 </script>
-
-<style lang="scss">
-</style>

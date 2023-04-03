@@ -1,46 +1,39 @@
 import { EventEmitter } from 'events'
-import { systemPreferences } from 'electron'
-import is from 'electron-is'
-import { LIGHT_THEME, DARK_THEME } from '@shared/constants'
+import { nativeTheme } from 'electron'
+
+import { APP_THEME } from '@shared/constants'
+import logger from '../core/Logger'
+import { getSystemTheme } from '../utils'
 
 export default class ThemeManager extends EventEmitter {
   constructor (options = {}) {
     super()
 
+    this.options = options
     this.init()
   }
 
   init () {
+    this.systemTheme = getSystemTheme()
+
     this.handleEvents()
   }
 
   getSystemTheme () {
-    let result = LIGHT_THEME
-    if (!is.macOS()) {
-      return result
-    }
-    result = systemPreferences.isDarkMode() ? DARK_THEME : LIGHT_THEME
-    return result
+    return this.systemTheme
   }
 
   handleEvents () {
-    if (!is.macOS()) {
-      return
-    }
-    systemPreferences.subscribeNotification(
-      'AppleInterfaceThemeChangedNotification',
-      () => {
-        const theme = this.getSystemTheme()
-        this.updateAppAppearance(theme)
-        this.emit('system-theme-changed', theme)
-      }
-    )
+    nativeTheme.on('updated', () => {
+      const theme = getSystemTheme()
+      this.systemTheme = theme
+      logger.info('[Motrix] nativeTheme updated===>', theme)
+      this.emit('system-theme-change', theme)
+    })
   }
 
-  updateAppAppearance (theme) {
-    if (!is.macOS() || theme !== LIGHT_THEME || theme !== DARK_THEME) {
-      return
-    }
-    systemPreferences.setAppLevelAppearance(theme)
+  updateSystemTheme (theme) {
+    theme = theme === APP_THEME.AUTO ? 'system' : theme
+    nativeTheme.themeSource = theme
   }
 }

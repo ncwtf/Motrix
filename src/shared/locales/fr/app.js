@@ -1,5 +1,5 @@
 export default {
-  'task-list': 'Liste des tâches',
+  'task-list': 'Tâches',
   'add-task': 'Ajouter une tâche',
   'about': 'À Propos de Motrix',
   'preferences': 'Préférences...',
@@ -23,6 +23,8 @@ export default {
   'under-development-message': 'Désolé, cette fonctionnalité est en cours de développement...',
   'yes': 'Oui',
   'no': 'Non',
+  'save': 'Sauvegarder',
+  'reset': 'Jeter',
   'cancel': 'Annuler',
   'submit': 'Envoyer',
   'gt1d': '> 1 jour',

@@ -1,19 +1,41 @@
+import appLocaleAr from '@shared/locales/ar'
+import appLocaleBg from '@shared/locales/bg'
 import appLocaleCa from '@shared/locales/ca'
 import appLocaleDe from '@shared/locales/de'
+import appLocaleEl from '@shared/locales/el'
 import appLocaleEnUS from '@shared/locales/en-US'
 import appLocaleFa from '@shared/locales/fa'
 import appLocaleFr from '@shared/locales/fr'
+import appLocaleHu from '@shared/locales/hu'
+import appLocaleId from '@shared/locales/id'
+import appLocaleIt from '@shared/locales/it'
 import appLocaleJa from '@shared/locales/ja'
+import appLocaleNl from '@shared/locales/nl'
 import appLocaleKo from '@shared/locales/ko'
-import appLocalePtBr from '@shared/locales/pt-BR'
-import appLocaleRu from '@shared/locales/ru-RU'
+import appLocalePl from '@shared/locales/pl'
+import appLocalePtBR from '@shared/locales/pt-BR'
+import appLocaleRo from '@shared/locales/ro'
+import appLocaleRu from '@shared/locales/ru'
+import appLocaleTh from '@shared/locales/th'
 import appLocaleTr from '@shared/locales/tr'
+import appLocaleUk from '@shared/locales/uk'
+import appLocaleVi from '@shared/locales/vi'
 import appLocaleZhCN from '@shared/locales/zh-CN'
 import appLocaleZhTW from '@shared/locales/zh-TW'
-import appLocaleUk from '@shared/locales/uk'
 
 // Please keep the locale key in alphabetical order.
+/* eslint-disable quote-props */
 const resources = {
+  'ar': {
+    translation: {
+      ...appLocaleAr
+    }
+  },
+  'bg': {
+    translation: {
+      ...appLocaleBg
+    }
+  },
   'ca': {
     translation: {
       ...appLocaleCa
@@ -22,6 +44,11 @@ const resources = {
   'de': {
     translation: {
       ...appLocaleDe
+    }
+  },
+  'el': {
+    translation: {
+      ...appLocaleEl
     }
   },
   'en-US': {
@@ -39,9 +66,29 @@ const resources = {
       ...appLocaleFr
     }
   },
+  'hu': {
+    translation: {
+      ...appLocaleHu
+    }
+  },
+  'id': {
+    translation: {
+      ...appLocaleId
+    }
+  },
+  'it': {
+    translation: {
+      ...appLocaleIt
+    }
+  },
   'ja': {
     translation: {
       ...appLocaleJa
+    }
+  },
+  'nl': {
+    translation: {
+      ...appLocaleNl
     }
   },
   'ko': {
@@ -49,9 +96,19 @@ const resources = {
       ...appLocaleKo
     }
   },
+  'pl': {
+    translation: {
+      ...appLocalePl
+    }
+  },
   'pt-BR': {
     translation: {
-      ...appLocalePtBr
+      ...appLocalePtBR
+    }
+  },
+  'ro': {
+    translation: {
+      ...appLocaleRo
     }
   },
   'ru': {
@@ -59,9 +116,24 @@ const resources = {
       ...appLocaleRu
     }
   },
+  'th': {
+    translation: {
+      ...appLocaleTh
+    }
+  },
   'tr': {
     translation: {
       ...appLocaleTr
+    }
+  },
+  'uk': {
+    translation: {
+      ...appLocaleUk
+    }
+  },
+  'vi': {
+    translation: {
+      ...appLocaleVi
     }
   },
   'zh-CN': {
@@ -73,12 +145,8 @@ const resources = {
     translation: {
       ...appLocaleZhTW
     }
-  },
-  'uk': {
-    translation: {
-      ...appLocaleUk
-    }
   }
 }
+/* eslint-enable quote-props */
 
 export default resources

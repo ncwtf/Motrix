@@ -1,10 +1,11 @@
 import { EventEmitter } from 'events'
+import { resolve } from 'path'
 import { dialog } from 'electron'
 import is from 'electron-is'
 import { autoUpdater } from 'electron-updater'
-import { resolve } from 'path'
+
 import logger from './Logger'
-import { getI18n } from '@/ui/Locale'
+import { getI18n } from '../ui/Locale'
 
 if (is.dev()) {
   autoUpdater.updateConfigPath = resolve(__dirname, '../../../app-update.yml')
@@ -16,8 +17,10 @@ export default class UpdateManager extends EventEmitter {
     this.options = options
     this.i18n = getI18n()
 
+    this.isChecking = false
     this.updater = autoUpdater
     this.updater.autoDownload = false
+    this.updater.autoInstallOnAppQuit = false
     this.updater.logger = logger
     this.autoCheckData = {
       checkEnable: this.options.autoCheck,
@@ -39,22 +42,22 @@ export default class UpdateManager extends EventEmitter {
     this.updater.on('update-not-available', this.updateNotAvailable.bind(this))
     this.updater.on('download-progress', this.updateDownloadProgress.bind(this))
     this.updater.on('update-downloaded', this.updateDownloaded.bind(this))
+    this.updater.on('update-cancelled', this.updateCancelled.bind(this))
     this.updater.on('error', this.updateError.bind(this))
 
-    if (this.autoCheckData.checkEnable) {
+    if (this.autoCheckData.checkEnable && !this.isChecking) {
       this.autoCheckData.userCheck = false
-      this.options.setCheckTime.setUserConfig('last-check-update-time', Date.now())
       this.updater.checkForUpdates()
     }
   }
 
   check () {
-    this.options.setCheckTime.setUserConfig('last-check-update-time', Date.now())
     this.autoCheckData.userCheck = true
     this.updater.checkForUpdates()
   }
 
   checkingForUpdate () {
+    this.isChecking = true
     this.emit('checking')
   }
 
@@ -66,14 +69,15 @@ export default class UpdateManager extends EventEmitter {
       message: this.i18n.t('app.update-available-message'),
       buttons: [this.i18n.t('app.yes'), this.i18n.t('app.no')],
       cancelId: 1
-    }, (buttonIndex) => {
-      if (buttonIndex === 0) {
+    }).then(({ response }) => {
+      if (response === 0) {
         this.updater.downloadUpdate()
       }
     })
   }
 
   updateNotAvailable (event, info) {
+    this.isChecking = false
     this.emit('update-not-available', info)
     if (this.autoCheckData.userCheck) {
       dialog.showMessageBox({
@@ -102,21 +106,27 @@ export default class UpdateManager extends EventEmitter {
     dialog.showMessageBox({
       title: this.i18n.t('app.check-for-updates-title'),
       message: this.i18n.t('app.update-downloaded-message')
-    }, () => {
+    }).then(_ => {
+      this.isChecking = false
       this.emit('will-updated')
-      setImmediate(() => {
+      setTimeout(() => {
         this.updater.quitAndInstall()
-      })
+      }, 200)
     })
   }
 
+  updateCancelled () {
+    this.isChecking = false
+  }
+
   updateError (event, error) {
+    this.isChecking = false
     this.emit('update-error', error)
     const msg = (error == null)
-      ? this.i18n.t('update-error-message')
+      ? this.i18n.t('app.update-error-message')
       : (error.stack || error).toString()
 
     this.updater.logger.warn(`[Motrix] update-error: ${msg}`)
-    dialog.showErrorBox(msg)
+    dialog.showErrorBox('Error', msg)
   }
 }

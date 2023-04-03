@@ -10,11 +10,7 @@
 
 <script>
   export default {
-    name: 'mo-logo-mini',
-    components: {
-    },
-    methods: {
-    }
+    name: 'mo-logo-mini'
   }
 </script>
 
@@ -29,6 +25,7 @@
     height: 28px;
     text-align: center;
     font-size: 0;
+    outline: none;
     padding: 2px;
     margin: 0 auto;
   }

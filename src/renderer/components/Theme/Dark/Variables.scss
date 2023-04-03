@@ -4,7 +4,7 @@ $--dk-app-background: transparent !default;
 $--dk-titlebar-actions-color: #eee !default;
 $--dk-titlebar-close-active-color: #fff !default;
 $--dk-titlebar-actions-active-background: rgba(0, 0, 0, 0.9) !default;
-$--dk-titlebar-close-active-background: $--color-danger !default;
+$--dk-titlebar-close-active-background: #fd0007 !default;
 $--dk-app-logo-color: #eee !default;
 $--dk-app-version-color: #a2a3a4 !default;
 $--dk-app-engine-title-color: #a2a3a4 !default;
@@ -20,9 +20,15 @@ $--dk-aside-text-color: #fff !default;
 -------------------------- */
 $--dk-subnav-background: #2D2D2D !default;
 $--dk-subnav-title-color: #fff !default;
+$--dk-subnav-action-color: #fff !default;
 $--dk-subnav-text-color: #aaa !default;
 $--dk-subnav-active-text-color: #fff !default;
 $--dk-subnav-active-background: #444 !default;
+$--dk-subnav-border-color: #ccc !default;
+
+/* Main
+-------------------------- */
+$--dk-main-background: #343434 !default;
 
 /* Panel
 -------------------------- */
@@ -51,6 +57,7 @@ $--dk-task-item-action-color: #eee !default;
 $--dk-task-item-action-hover-color: #fff !default;
 $--dk-no-task-color: #aaa !default;
 $--dk-add-task-dialog-footer-background: #4a4a4a !default;
+$--dk-task-detail-box-border: #565656 !default;
 
 /* Preference
 -------------------------- */
@@ -59,11 +66,20 @@ $--dk-preference-form-text-color: #dfdfdf !default;
 /* Speedometer
 -------------------------- */
 $--dk-speedometer-background: #333 !default;
-$--dk-speedometer-border-color: #ccc !default;
+$--dk-speedometer-border-color: #5f5f5f !default;
 $--dk-speedometer-hover-border-color: #9b9b9b !default;
 $--dk-speedometer-primary-color: $--color-primary !default;
 $--dk-speedometer-stopped-color: #9b9b9b !default;
 $--dk-speedometer-text-color: #9b9b9b !default;
+
+/* Task Graphic
+-------------------------- */
+$--dk-graphic-box-background: #3f3f3f !default;
+$--dk-graphic-atom-color-0: #161b22 !default;
+$--dk-graphic-atom-color-1: #0e4429 !default;
+$--dk-graphic-atom-color-2: #006d32 !default;
+$--dk-graphic-atom-color-3: #26a641 !default;
+$--dk-graphic-atom-color-4: #39d353 !default;
 
 /* Element UI
 -------------------------- */

@@ -11,6 +11,9 @@ const defaultBrowserOptions = {
   show: false,
   width: 1024,
   height: 768,
+  vibrancy: 'ultra-dark',
+  visualEffectState: 'active',
+  backgroundColor: is.macOS() ? '#00000000' : '#FFF',
   webPreferences: {
     nodeIntegration: true
   }
@@ -71,7 +74,7 @@ export default class WindowManager extends EventEmitter {
   openWindow (page, options = {}) {
     const pageOptions = this.getPageOptions(page)
     const { hidden } = options
-
+    const autoHideWindow = this.userConfig['auto-hide-window']
     let window = this.windows[page] || null
     if (window) {
       window.show()
@@ -81,18 +84,23 @@ export default class WindowManager extends EventEmitter {
 
     window = new BrowserWindow({
       ...defaultBrowserOptions,
-      ...pageOptions.attrs
+      ...pageOptions.attrs,
+      webPreferences: {
+        enableRemoteModule: true,
+        contextIsolation: false,
+        nodeIntegration: true,
+        nodeIntegrationInWorker: true
+      }
     })
 
     const bounds = this.getPageBounds(page)
-    console.log('bounds ====>', bounds)
     if (bounds) {
       window.setBounds(bounds)
     }
 
-    window.webContents.on('new-window', (e, url) => {
-      e.preventDefault()
+    window.webContents.setWindowOpenHandler(({ url }) => {
       shell.openExternal(url)
+      return { action: 'deny' }
     })
 
     if (pageOptions.url) {
@@ -105,6 +113,14 @@ export default class WindowManager extends EventEmitter {
       }
     })
 
+    window.on('enter-full-screen', () => {
+      this.emit('enter-full-screen', window)
+    })
+
+    window.on('leave-full-screen', () => {
+      this.emit('leave-full-screen', window)
+    })
+
     this.handleWindowState(page, window)
 
     this.handleWindowClose(pageOptions, page, window)
@@ -112,6 +128,9 @@ export default class WindowManager extends EventEmitter {
     this.bindAfterClosed(page, window)
 
     this.addWindow(page, window)
+    if (autoHideWindow) {
+      this.handleWindowBlur()
+    }
     return window
   }
 
@@ -166,7 +185,15 @@ export default class WindowManager extends EventEmitter {
     window.on('close', (event) => {
       if (pageOptions.bindCloseToHide && !this.willQuit) {
         event.preventDefault()
-        window.hide()
+
+        // @see https://github.com/electron/electron/issues/20263
+        if (window.isFullScreen()) {
+          window.once('leave-full-screen', () => window.hide())
+
+          window.setFullScreen(false)
+        } else {
+          window.hide()
+        }
       }
       const bounds = window.getBounds()
       this.emit('window-closed', { page, bounds })
@@ -175,15 +202,16 @@ export default class WindowManager extends EventEmitter {
 
   showWindow (page) {
     const window = this.getWindow(page)
-    if (!window) {
+    if (!window || (window.isVisible() && !window.isMinimized())) {
       return
     }
+
     window.show()
   }
 
   hideWindow (page) {
     const window = this.getWindow(page)
-    if (!window) {
+    if (!window || !window.isVisible()) {
       return
     }
     window.hide()
@@ -200,10 +228,11 @@ export default class WindowManager extends EventEmitter {
     if (!window) {
       return
     }
-    if (window.isVisible()) {
-      window.hide()
-    } else {
+
+    if (!window.isVisible() || window.isFullScreen()) {
       window.show()
+    } else {
+      window.hide()
     }
   }
 
@@ -217,6 +246,18 @@ export default class WindowManager extends EventEmitter {
     })
   }
 
+  onWindowBlur (event, window) {
+    window.hide()
+  }
+
+  handleWindowBlur () {
+    app.on('browser-window-blur', this.onWindowBlur)
+  }
+
+  unbindWindowBlur () {
+    app.removeListener('browser-window-blur', this.onWindowBlur)
+  }
+
   handleAllWindowClosed () {
     app.on('window-all-closed', (event) => {
       event.preventDefault()
@@ -227,7 +268,7 @@ export default class WindowManager extends EventEmitter {
     if (!window) {
       return
     }
-    logger.info('[Motrix] sendCommandTo===>', command, ...args)
+    logger.info('[Motrix] send command to:', command, ...args)
     window.webContents.send('command', command, ...args)
   }
 

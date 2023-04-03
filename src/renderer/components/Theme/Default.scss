@@ -9,6 +9,7 @@ body {
     BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB",
     "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-variant: tabular-nums;
+  font-size: $--font-size-medium;
 }
 
 ::-webkit-scrollbar {
@@ -38,6 +39,10 @@ img {
   height: auto;
   max-width: 100%;
   max-height: 100%;
+}
+
+iframe {
+  border: 0;
 }
 
 .clearfix {
@@ -113,6 +118,9 @@ img {
   line-height: 1;
   padding-top: 4px;
   color: $--color-info;
+  > a {
+    margin-right: 10px;
+  }
 }
 
 .el-input-number.el-input-number--mini {
@@ -126,6 +134,10 @@ img {
   }
 }
 
+.el-drawer__container {
+  outline: none;
+}
+
 /* App Main
 -------------------------- */
 #app,
@@ -136,7 +148,7 @@ img {
 
 .draggable {
   -webkit-app-region: drag;
-  -webkit-user-select: none;
+  user-select: none;
 }
 
 .non-draggable {
@@ -151,6 +163,10 @@ img {
 .subnav {
   background-color: $--subnav-background;
   color: $--subnav-text-color;
+}
+
+.main {
+  background-color: $--main-background;
 }
 
 .subnav-inner {
@@ -221,7 +237,7 @@ img {
   .panel-header {
     position: relative;
     padding: 44px 0 12px;
-    margin: 0 36px;
+    margin: 0 16px;
     border-bottom: 2px solid $--panel-border-color;
     user-select: none;
     h4 {
@@ -234,11 +250,87 @@ img {
   }
   .panel-content {
     position: relative;
-    padding: 16px 36px 64px;
+    padding: 0;
     height: 100%;
   }
 }
 
 .form-actions {
   background: $--form-actions-background;
+}
+
+.mo-table-wrapper {
+  border: 1px solid $--table-border-color;
+  border-bottom: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+  .el-table th {
+    padding: 2px 0;
+  }
+}
+
+.graphic-box {
+  padding: 0.5rem 0.375rem;
+  margin-bottom: 1.5rem;
+  font-size: 0;
+  line-height: 0;
+  border: 1px solid $--task-detail-box-border;
+  border-radius: $--border-radius-base;
+  &> svg {
+    display: block;
+    margin: 0 auto;
+  }
+}
+
+.form-static-value {
+  word-break: break-all;
+  color: $--input-font-color;
+}
+
+@media only screen and (max-width:567px) {
+  .hidden-xs-only {
+    display:none !important
+  }
+}
+
+@media only screen and (min-width: 568px) {
+  .panel {
+    .panel-header {
+      margin-left: 36px;
+      margin-right: 36px;
+    }
+  }
+  .task-list {
+    padding-left: 36px;
+    padding-right: 36px;
+  }
+  .form-preference {
+    padding-left: 36px;
+  }
+  .form-actions {
+    padding: 24px 36px;
+  }
+  .mo-speedometer {
+    right: 36px;
+  }
+  .hidden-sm-and-up {
+    display: none !important;
+  }
+}
+@media only screen and (min-width: 568px) and (max-width: 991px) {
+  .hidden-sm-only {
+    display: none !important;
+  }
+}
+
+@media only screen and (max-width: 791px) {
+  .hidden-sm-and-down {
+    display: none !important;
+  }
+}
+
+@media only screen and (min-width: 792px) {
+  .hidden-md-and-up {
+    display: none !important;
+  }
 }

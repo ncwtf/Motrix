@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events'
 import { join } from 'path'
 import { TouchBar, nativeImage } from 'electron'
+
 import { handleCommand } from '../utils/menu'
 import logger from '../core/Logger'
 
@@ -15,7 +16,7 @@ export default class TouchBarManager extends EventEmitter {
   }
 
   load () {
-    this.template = require(`../menus/touchBar.json`)
+    this.template = require('../menus/touchBar.json')
   }
 
   getClickFn (item) {
@@ -41,30 +42,32 @@ export default class TouchBarManager extends EventEmitter {
     const { label, backgroundColor, textColor, size } = options
 
     switch (type) {
-      case 'button':
-        const icon = this.getIconImage(options.icon)
-        const click = this.getClickFn(options)
-        result = new TouchBarButton({
-          label,
-          backgroundColor,
-          icon,
-          click
+    case 'button':
+      result = new TouchBarButton({
+        label,
+        backgroundColor,
+        icon: this.getIconImage(options.icon),
+        click: this.getClickFn(options)
+      })
+      break
+    case 'label':
+      result = new TouchBarLabel({
+        label,
+        textColor
+      })
+      break
+    case 'spacer':
+      result = new TouchBarSpacer({ size })
+      break
+    case 'group':
+      result = new TouchBarGroup({
+        items: new TouchBar({
+          items: options.items
         })
-        break
-      case 'label':
-        result = new TouchBarLabel({
-          label,
-          textColor
-        })
-        break
-      case 'spacer':
-        result = new TouchBarSpacer({ size })
-        break
-      case 'group':
-        result = new TouchBarGroup({ items: options.items })
-        break
-      default:
-        result = null
+      })
+      break
+    default:
+      result = null
     }
 
     return result
@@ -90,7 +93,7 @@ export default class TouchBarManager extends EventEmitter {
     if (!bar) {
       try {
         const items = this.build(this.template)
-        bar = new TouchBar(items)
+        bar = new TouchBar({ items })
         this.bars[page] = bar
       } catch (e) {
         logger.info('getTouchBarByPage fail', e)
